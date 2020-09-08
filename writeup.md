@@ -1,17 +1,5 @@
 # **Finding Lane Lines on the Road** 
 
-## Writeup Template
-
-### You can use this file as a template for your writeup if you want to submit it as a markdown file. But feel free to use some other method and submit a pdf if you prefer.
-
----
-
-**Finding Lane Lines on the Road**
-
-The goals / steps of this project are the following:
-* Make a pipeline that finds lane lines on the road
-* Reflect on your work in a written report
-
 Project Goal
 ---
 
@@ -21,33 +9,56 @@ Implement an image pipeline that finds lane lines from road videos including:
   * finds the left and right lane lines with either line segments or solid lines
   * map out the full extent of the left and right lane boundaries
 
-[//]: # (Image References)
 
-[image1]: ./examples/grayscale.jpg "Grayscale"
-
+Reflection
 ---
 
-### Reflection
+### Image Pipeline Description
 
-### 1. Describe your pipeline. As part of the description, explain how you modified the draw_lines() function.
+The below image shows the image pipeline I implemented. The pipeline shows the five steps for annotating lane boundaries. 
 
-My pipeline consisted of 5 steps. First, I converted the images to grayscale, then I .... 
+![Lane Line Detection Image Pipeline][image1]
 
-In order to draw a single line on the left and right lanes, I modified the draw_lines() function by ...
+*Fig. 1: The lane line detection image pipeline*
 
-If you'd like to include images to show how the pipeline works, here is how to include an image: 
 
-![alt text][image1]
+1. Image Grayscaling 
+
+First of all, the image is converted to grayscale for further processing. It uses `cv2.cvtColor()` function for coverting images. Using grayscale image in computer vision has several advantages over using colored image including light intensity expression[^1]. In this project I used the grayscale image since I assumed that the brightness difference is the most crucial feature for distinguishing road surface and road lane. However, The image after this step is shown with somewhat greenish images in the above figure. This is because `matplotlib` uses color scheme for expressing a single-channel image.
+
+2. Gaussian Blur
+
+Second, It applies Gaussian Blur filter reducing noises. It uses `cv2.GaussianBlur()` function for appling Gaussian Blur. The kernel size is set to 5 after few tries with the sample images. Note that the filter can cause the loss of important features from the image if the kernel size is too big. On the other hand, it doesn't filter out signal noises from the image if the kernel size is too small.
+
+3. Canny Edge Detection
+
+I choosed this parameter because
+
+4. Region Masking
+
+The algorithm only consider possible lane lines not the given lanes.
+This algorithm masks two possible regions for the each lane line. 
+
+5.  Line Finding
+
+I choosed 2D Polynomial Fitting for finding lines to cover curved road.
+modifying draw_lines()
+Finally, lane visualization using alpha blending is applied.
 
 
 ### 2. Identify potential shortcomings with your current pipeline
 
+The algorithm could not detect lane lines correctly on following road situations:
+* Lane line splits and merge: entry ramps and exit ramps on highway
+* Lane line is too curvy: interchanges on highway, roundabouts
+* Obstacles besides on road: guardrails, curbstones
+* Limited environmental conditions: heavy rain, shadow forming an distinct line ahead of the vehicle
 
-One potential shortcoming would be what would happen when ... 
-
-Another shortcoming could be ...
-
-This can be improved with 
+This can be improved if:
+* the algorithm can classify situations for line splits and merge with the angle between the found left and right lanes. or the number of existing lines at each line segments.
+* the algorithm can fit curved lines with advanced curve fitting algorithm
+* the algorithm assumes situation and uses prior knowledge for line segment finding 
+* template matching could improve the performance of the line detection on limited environmental conditions. 
 
 ### 3. Suggest possible improvements to your pipeline
 
@@ -55,42 +66,8 @@ A possible improvement would be to ...
 
 Another potential improvement could be to ...
 
-
-Creating a Great Writeup
+References
 ---
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
+[^1]: In image processing applications, why do we convert from RGB to Grayscale?, Quora, https://www.quora.com/In-image-processing-applications-why-do-we-convert-from-RGB-to-Grayscale.
 
-1. Describe the pipeline
-
-2. Identify any shortcomings
-
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
-
-
-The Project
----
-
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you should install the starter kit to get started on this project. ##
-
-**Step 1:** Set up the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) if you haven't already.
-
-**Step 2:** Open the code in a Jupyter Notebook
-
-You will complete the project code in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out [Udacity's free course on Anaconda and Jupyter Notebooks](https://classroom.udacity.com/courses/ud1111) to get started.
-
-Jupyter is an Ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, use terminal to navigate to your project directory and then run the following command at the terminal prompt (be sure you've activated your Python 3 carnd-term1 environment as described in the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) installation instructions!):
-
-`> jupyter notebook`
-
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
-
-**Step 3:** Complete the project and submit both the Ipython notebook and the project writeup
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+[image1]: ./resources/CarND-P1-Fig1.png "Image Pipeline"

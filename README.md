@@ -6,7 +6,7 @@ Introduction
 
 When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
 
-In this project, I implemented a line finding algorithm that detects lane lines in images using Python and OpenCV. This pipeline takes images from a video of driving scene on public road. Then, it finds each road lane lines from each video frame. Finally, it returns a video file that visualizes the found road boundaries as shown below.
+In this project, I implemented a line finding algorithm that detects lane lines in images using Python and OpenCV. This pipeline takes images from a video of driving scene on public road. Then, it finds each road lane lines from each video frame. Finally, it returns a video file that visualizes the found road boundaries as shown below. Please refer `writeup.md` for detailed information.
 
 <img src="examples/laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
 
@@ -16,7 +16,7 @@ Installation
 ---
 
 You need to install a python environment given in [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit).
-In my case, creating conda environment given the above link doesn't work therefore I used a modified conda environment in [here](https://github.com/udacity/CarND-Term1-Starter-Kit/pull/119/commits). 
+In my case, creating conda environment given the above link doesn't work therefore I used a modified conda environment in [here](https://github.com/udacity/CarND-Term1-Starter-Kit/pull/119/commits).
 
 To install conda environment, use following command to install and activate the conda environment.
 
