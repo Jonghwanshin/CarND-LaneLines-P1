@@ -40,13 +40,53 @@ Forth, it applies region masking for seperating the lane and non-lane features. 
 
 **5) Line Finding**
 
-Finally, it finds the left and the right road lane from the pre-processed image. 
-I choosed 2D Polynomial Fitting for finding lines to cover curved road.
+Then, it finds the left and the right road lane from the pre-processed image. It utilizes Hough Transform with `cv.HoughLinesP()` function to find straight lines. It returns a set of lines in the image. However, we need to combine those lines for each the left and the right road boundaries since visualizing all found lines may confuses the user. Therefore, I modified `draw_lines()` to combine the lines as shown below.
 
-I modified `draw_lines()` to ..
+```python
+def average_lane_line(lines, y_size):
+    lines = np.array(lines)
+    y_min = np.min(lines[:,3:])
+    y_max = np.max(lines[:,3:])
+    # get mean lines
+    slope_mean = np.mean(lines[:,0])
+    x1_mean = np.mean(lines[:,1])
+    y1_mean = np.mean(lines[:,3])
+    # get extreme points from line group
+    y1 = int(y_min)
+    x1 = int((y1 - y1_mean)/slope_mean + x1_mean)
+    y2 = int(y_size) # the y value of the bottom of image
+    x2 = int((y2 - y1_mean)/slope_mean + x1_mean)
+    return (x1, y1), (x2, y2)
 
-Finally, overaying found lanes with alpha blending is applied.
+def draw_lines(img, lines, color=[255, 0, 0], thickness=10):
+    left_line = []
+    right_line = []
+    for line in lines:
+        for x1,y1,x2,y2 in line:
+            # slope get angle of cluster
+            # cluster into 2 large segments
+            slope = ((y2-y1)/(x2-x1))
+            if abs(slope) > 0.3: # to get vertical lines
+                if slope < 0:
+                    left_line.append([slope,x1,x2,y1,y2])
+                else:
+                    right_line.append([slope,x1,x2,y1,y2]) 
+    p1_left, p2_left = average_lane_line(left_line, img.shape[0])
+    p1_right, p2_right = average_lane_line(right_line, img.shape[0])
+    # add for left line
+    cv2.line(img, p1_left, p2_left, color, thickness)
+    # add for right line
+    cv2.line(img, p1_right, p2_right, color, thickness)
+```
 
+The `draw_lines()` function divides the found lines into two groups, the left and right line. If the slope of the line is less than 0, it is classified as left, otherwise it is classified as right. Then, it represents each lane line groups by averaging slopes and intercepts of the lines and use the extreme points of the line groups. Finally, 
+it overrays the found lane lines to the original image using `cv.addWeighted()` function.
+
+**Additional Challenges**
+
+The challenge video shows a driving scene on a curved road. Therefore, it needs to find curved lines for lane detection. I choosed Polynomial RANSAC algorithm for finding lines. However, naively applying this algorithm is showing erronous results.
+
+The region masking didn't work correctly.
 
 ### 2. Identify potential shortcomings with your current pipeline
 
