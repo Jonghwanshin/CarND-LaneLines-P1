@@ -106,7 +106,7 @@ def color_pick(image):
 
 RANSAC polynomial fitting
 
-This function inputs an edge image from canny edge detection and results the left and right lane lines from input image. I assumed that a curved line can be expressed with 2nd-order polynomial, which can also be expressed to a x^2 + bx + c =0. Therefore, I used RANSAC algorithm with 2nd-order to estimate the coefficients of the polynomial. This process is applied to  the left and right line edge to find both road boundaries.
+This function inputs an edge image from canny edge detection and results the left and right lane lines from input image. I assumed that a curved line can be expressed with 2nd-order polynomial, which can also be expressed to a x^2 + bx + c =0. Therefore, I used RANSAC algorithm with 2nd-order to estimate the coefficients of the polynomial. I also added polynomial regression as safety measures for RANSAC algorithm. This process is applied to the left and right line edge to find both road boundaries.
 
 ```python
 from sklearn.linear_model import RANSACRegressor
@@ -118,18 +118,22 @@ def get_polylines(img, direction='left'):
     # get nonzero value from image
     np_nz = np.transpose(np.nonzero(img))
     
-    xdata = np_nz[:,1].reshape(-1,1)
+    xdata = np_nz[:,1]
     ydata = np_nz[:,0]
     
     # RANSAC estimator
-    estimator = RANSACRegressor()
-    model = make_pipeline(PolynomialFeatures(2), estimator)
-    
-    model.fit(xdata, ydata)
-    
-    # Predict data of estimated models
-    draw_x = np.arange(xdata.min(), xdata.max())
-    draw_y = model.predict(draw_x.reshape(-1,1))
+    try:
+        estimator = RANSACRegressor()
+        model = make_pipeline(PolynomialFeatures(2), estimator)
+
+        model.fit(xdata.reshape(-1,1), ydata)
+        # Predict data of estimated models
+        draw_x = np.arange(xdata.min(), xdata.max())
+        draw_y = model.predict(draw_x.reshape(-1,1))
+    except:
+        f = np.poly1d(np.polyfit(xdata,ydata,2))
+        draw_x = np.arange(xdata.min(), xdata.max())
+        draw_y = f(draw_x)
     
     draw_points = np.asarray([draw_x, draw_y], dtype=np.int32).T
     return draw_points
