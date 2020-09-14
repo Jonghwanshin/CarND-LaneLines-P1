@@ -84,31 +84,74 @@ it overrays the found lane lines to the original image using `cv.addWeighted()` 
 
 **Additional Challenges**
 
-The challenge video shows a driving scene on a curved road. Therefore, it needs to find curved lines for lane detection. I choosed Polynomial RANSAC algorithm for finding lines. However, naively applying this algorithm is showing erronous results.
+The challenge video shows a driving scene on a curved road. Therefore, it needs to find curved lines for lane detection. I added modified region mask to remove ego vehicle hood, color picking with HSV image and RANSAC(Random Sample Consensus) algorithm for finding curved lines. 
 
-The region masking didn't work correctly.
+Color Picking from HSV Image
+
+This function converts a RGB Image to HSV image. Then, it picks the yellow and white area from the HSV image and apply yellow and white color mask to the original image. Then, it outputs a RGB image which has only white and yellow color.
+```python
+def color_pick(image):
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+    lower_white = np.array([0, 0, 100])
+    upper_white = np.array([255, 30, 255])
+    white_mask = cv2.inRange(hsv_image, lower_white, upper_white)
+    
+    lower_yellow = np.array([10, 0, 0])
+    upper_yellow = np.array([80, 255, 255])
+    yellow_mask = cv2.inRange(hsv_image, lower_yellow, upper_yellow)
+    
+    mask = cv2.bitwise_or(white_mask, yellow_mask)    
+    return cv2.bitwise_and(image, image, mask = mask)
+```
+
+RANSAC polynomial fitting
+
+This function inputs an edge image from canny edge detection and results the left and right lane lines from input image. I assumed that a curved line can be expressed with 2nd-order polynomial, which can also be expressed to a x^2 + bx + c =0. Therefore, I used RANSAC algorithm with 2nd-order to estimate the coefficients of the polynomial. This process is applied to  the left and right line edge to find both road boundaries.
+
+```python
+from sklearn.linear_model import RANSACRegressor
+from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import make_pipeline
+
+def get_polylines(img, direction='left'):
+    # get nonzero value from image
+    np_nz = np.transpose(np.nonzero(img))
+    
+    xdata = np_nz[:,1].reshape(-1,1)
+    ydata = np_nz[:,0]
+    
+    # RANSAC estimator
+    estimator = RANSACRegressor()
+    model = make_pipeline(PolynomialFeatures(2), estimator)
+    
+    model.fit(xdata, ydata)
+    
+    # Predict data of estimated models
+    draw_x = np.arange(xdata.min(), xdata.max())
+    draw_y = model.predict(draw_x.reshape(-1,1))
+    
+    draw_points = np.asarray([draw_x, draw_y], dtype=np.int32).T
+    return draw_points
+```
+
+Results
+
+The algorithm can find solid curved line from the test video. However, it showed unstable behavior when it shows when line edge are weak, which are when line is in shadow and if the space between dashed line is too long.
 
 ### 2. Identify potential shortcomings with your current pipeline
 
 The algorithm could not detect lane lines correctly on following road situations:
 * Lane line splits and merge: entry ramps and exit ramps on highway
-* Lane line is too curvy: interchanges on highway, roundabouts
-* Obstacles besides on road: guardrails, curbstones
-* Limited environmental conditions: heavy rain, low constrast()
-
+* Curve lane line: interchanges on highway, roundabouts
+* Limited environmental conditions: heavy rain, low constrast
 
 ### 3. Suggest possible improvements to your pipeline
 
 The limitations can be improved if:
 * the algorithm can classify situations for line splits and merge with the angle between the found left and right lanes. or the number of existing lines at each line segments.
-* the algorithm can fit curved lines with advanced curve fitting algorithm
-* the algorithm assumes situation and uses prior knowledge for line segment finding 
-* template matching could improve the performance of the line detection on limited environmental conditions. 
-
-A possible improvement would be to ...
-
-
-Another potential improvement could be to ...
+* the parameter for line finding algorithm(i.e. RANSAC) is properly tuned, and ensemble of two or more line finding algorithms.
+* template matching could improve the performance of the line detection at limited environmental conditions. 
 
 References
 ---
